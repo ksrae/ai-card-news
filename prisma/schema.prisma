@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Contents {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String   
+  original_url  String?  @db.Text
+  raw_text      String?  @db.Text
+  full_article  Json?    // AI generated full article JSON
+  thumbnail_url String?  
+  category      String? 
+  status        String   @default("DRAFT") // DRAFT, PUBLISHED
+  created_at    DateTime @default(now())
+
+  card_slides   CardSlides[]
+  tags          ContentTags[]
+
+  @@map("contents")
+}
+
+model CardSlides {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content_id  String   @db.Uuid
+  slide_order Int
+  headline    String
+  description String   @db.Text
+  image_url   String?
+
+  content     Contents @relation(fields: [content_id], references: [id], onDelete: Cascade)
+
+  @@index([content_id])
+  @@map("card_slides")
+}
+
+model Tags {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @unique
+  created_at DateTime @default(now())
+
+  contents  ContentTags[]
+
+  @@map("tags")
+}
+
+model ContentTags {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content_id String   @db.Uuid
+  tag_id     String   @db.Uuid
+
+  content    Contents @relation(fields: [content_id], references: [id], onDelete: Cascade)
+  tag        Tags     @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@unique([content_id, tag_id])
+  @@index([content_id])
+  @@index([tag_id])
+  @@map("content_tags")
+}
