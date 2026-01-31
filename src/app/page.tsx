@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Settings, Newspaper, X, Trash2, Search } from "lucide-react";
 
@@ -19,9 +19,8 @@ interface TagItem {
   count: number;
 }
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [contents, setContents] = useState<ContentSummary[]>([]);
   const [tags, setTags] = useState<TagItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +81,7 @@ export default function Home() {
     if (urlTag !== selectedTag) {
       setSelectedTag(urlTag);
     }
-  }, [searchParams]);
+  }, [searchParams, selectedTag]);
 
   // Debounce search input
   useEffect(() => {
@@ -135,7 +134,6 @@ export default function Home() {
       const res = await fetch(`/api/contents/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setContents(prev => prev.filter(c => c.id !== id));
-        // Refresh tags count
         fetchTags();
       } else {
         alert('삭제에 실패했습니다.');
@@ -149,21 +147,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 font-sans">
-      <nav className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
-        <Link href="/" className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 flex items-center gap-2">
-          <Newspaper className="text-blue-600 w-6 h-6" />
-          AI Card News
-        </Link>
-        <Link
-          href="/create"
-          className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
-          title="Create New Content"
-        >
-          <Settings className="w-6 h-6" />
-        </Link>
-      </nav>
-
+    <>
       <div className="max-w-5xl mx-auto p-8">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Latest Updates</h1>
@@ -322,6 +306,34 @@ export default function Home() {
           </>
         )}
       </div>
+    </>
+  );
+}
+
+export default function Home() {
+  return (
+    <main className="min-h-screen bg-gray-50 font-sans">
+      <nav className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+        <Link href="/" className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 flex items-center gap-2">
+          <Newspaper className="text-blue-600 w-6 h-6" />
+          AI Card News
+        </Link>
+        <Link
+          href="/create"
+          className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
+          title="Create New Content"
+        >
+          <Settings className="w-6 h-6" />
+        </Link>
+      </nav>
+
+      <Suspense fallback={
+        <div className="flex justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      }>
+        <HomeContent />
+      </Suspense>
     </main>
   );
 }
