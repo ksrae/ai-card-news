@@ -7,8 +7,45 @@ const openai = new OpenAI({
   baseURL: "https://api.upstage.ai/v1"
 });
 
+const DAILY_LIMIT = 3;
+
+// Get Korea timezone start/end of today
+function getKoreaTodayRange() {
+  const now = new Date();
+  const koreaOffset = 9 * 60 * 60 * 1000;
+  const koreaTime = new Date(now.getTime() + koreaOffset);
+
+  const startOfDay = new Date(koreaTime);
+  startOfDay.setUTCHours(0, 0, 0, 0);
+
+  const endOfDay = new Date(koreaTime);
+  endOfDay.setUTCHours(23, 59, 59, 999);
+
+  return {
+    start: new Date(startOfDay.getTime() - koreaOffset),
+    end: new Date(endOfDay.getTime() - koreaOffset)
+  };
+}
+
 export async function POST(req: Request) {
   const { content, type } = await req.json();
+
+  // Check daily limit
+  const { start, end } = getKoreaTodayRange();
+  const todayCount = await prisma.contents.count({
+    where: {
+      created_at: {
+        gte: start,
+        lte: end
+      }
+    }
+  });
+
+  if (todayCount >= DAILY_LIMIT) {
+    return NextResponse.json({
+      error: "오늘의 등록 한도(3개)를 초과했습니다. 내일 다시 시도해주세요."
+    }, { status: 429 });
+  }
 
   const sourceText = content;
 
