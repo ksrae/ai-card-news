@@ -319,9 +319,9 @@ export default function Home() {
           AI Card News
         </Link>
         <Link
-          href="/create"
+          href="/admin"
           className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
-          title="Create New Content"
+          title="Admin Panel"
         >
           <Settings className="w-6 h-6" />
         </Link>
