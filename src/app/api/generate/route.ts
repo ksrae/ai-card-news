@@ -117,17 +117,9 @@ export async function POST(req: Request) {
     // Extract tags from article
     const tagNames: string[] = articleData.tags || [];
 
-    // Create or find tags
-    const tagRecords = await Promise.all(
-      tagNames.map(async (name: string) => {
-        const normalizedName = name.trim().toLowerCase();
-        return prisma.tags.upsert({
-          where: { name: normalizedName },
-          update: {},
-          create: { name: normalizedName }
-        });
-      })
-    );
+    // Create or find tags (reusing similar tags with 90%+ similarity)
+    const { processTags } = await import('@/lib/tagUtils');
+    const tagRecords = await processTags(tagNames, 90);
 
     // Save to Database
     const savedContent = await prisma.contents.create({
